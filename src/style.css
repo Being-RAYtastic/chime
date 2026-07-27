@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* @import '@fontsource/poppins/400.css'; */
+@import '@fontsource/poppins/500.css';
+/* @import '@fontsource/poppins/600.css'; */
+
+
+/* @theme {
+  --color-background: #1c1917;
+  --color-surface: #292524;
+  --color-divider: #3f3a37;
+  --color-player: #141110;
+  --color-accent: #f3a5b0;
+  --color-muted: #78716c;
+} */
+
+@theme {
+  --color-background: #1a1f2e;
+  --color-surface: #20263a;
+  --color-divider: #313a52;
+  --color-player: #12151f;
+  --color-accent: #d98a94;
+  --color-accent-secondary: #e8c468;
+  --color-muted: #8a92a8;
+  --color-text: #e8ecf5;
+
+  --font-poppins: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+
+}
