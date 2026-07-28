@@ -153,7 +153,7 @@ function handleScroll(event) {
 </script>
 
 <template>
-  <div class="h-screen bg-background flex flex-col gap-6 p-4 text-text font-poppins">
+  <div class="h-[100dvh] bg-background flex flex-col gap-6 p-4 text-text font-poppins">
     <!-- <div class="p-5"> -->
       <Searchbar @search="fetchSongs" />
     <!-- </div> -->
