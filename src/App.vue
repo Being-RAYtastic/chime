@@ -50,12 +50,13 @@ function playPrevious() {
 
 const currentSearchTerm = ref('top hits')
 const songListRef = ref(null)
+const fetchError = ref(false)
 
 async function fetchSongs(query) {
   currentSearchTerm.value = query
   
   try {
-    const response = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&limit=20`)
+    const response = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&limit=20`, { cache: 'no-store' })
     const data = await response.json()
 
     songs.value = data.results.map(track => ({
@@ -67,19 +68,24 @@ async function fetchSongs(query) {
       duration: track.trackTimeMillis / 1000
     }))
 
+    fetchError.value = false
     songListRef.value.scrollTop = 0 // scroll back to top
     // console.log(data)
     // console.log(songs.value)
     // offset.value = songs.value.length
   } catch (error) {
     console.warn('Error fetching more songs:', error)
+    fetchError.value = true
+    songs.value.length = 0
   }
 }
 
 
 onMounted(()=>{
-  fetchSongs('top hits')
+    fetchSongs('tophits')
 })
+
+
 
 
 const isLoadingMore = ref(false)
@@ -112,6 +118,7 @@ async function fetchMoreSongs(query) {
       return !songs.value.some(existing => existing.id === song.id)
     })
 
+    fetchError.value = false
     if (newSongs.length === 0) return  // if no new songs to fetch
 
     songs.value = [...songs.value, ...newSongs]
@@ -120,6 +127,7 @@ async function fetchMoreSongs(query) {
 
   } catch (error) {
       console.warn('Error fetching more songs:', error)
+      fetchError.value = true
   } finally {
       isLoadingMore.value = false
   }
@@ -151,8 +159,16 @@ function handleScroll(event) {
             [&::-webkit-scrollbar-thumb]:bg-divider
             [&::-webkit-scrollbar-thumb]:rounded-full">
 
-          <SongItem v-for="song in songs" :key="song.id" :song="song"
+          <SongItem v-for="song in songs" :key="song.id" :song="song" v
             :isPlaying="isPlaying && currentSong?.id === song.id" @play="togglePlay"></SongItem>
+
+          <div v-if="fetchError" class="text-center text-muted text-sm py-6">
+            Couldn't load songs. Try searching for something else.
+          </div>
+          <div v-else-if="songs.length===0 || isLoadingMore" class="text-center text-muted text-sm py-6">
+            Loading...
+          </div>
+          
 
       </div>
     </div>
