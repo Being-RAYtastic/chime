@@ -51,6 +51,7 @@ function playPrevious() {
 const currentSearchTerm = ref('top hits')
 const songListRef = ref(null)
 const fetchError = ref(false)
+const noMoreNewSongsToFetch = ref(false)
 
 async function fetchSongs(query) {
   currentSearchTerm.value = query
@@ -69,6 +70,7 @@ async function fetchSongs(query) {
     }))
 
     fetchError.value = false
+    noMoreNewSongsToFetch.value = false
     songListRef.value.scrollTop = 0 // scroll back to top
     // console.log(data)
     // console.log(songs.value)
@@ -89,17 +91,18 @@ onMounted(()=>{
 
 
 const isLoadingMore = ref(false)
+
 async function fetchMoreSongs(query) {
   if (isLoadingMore.value) return
   if (songs.value.length >= 100) return   // API can't return more than limit=200 (max limit)
-
-  isLoadingMore.value = true
-
-
+  if (noMoreNewSongsToFetch.value) return  // no need to call api if it can't fetch new results
 
   const nextLimit = songs.value.length + 10
 
-  try {
+  isLoadingMore.value = true
+  
+  try {    
+
     if (query !== currentSearchTerm.value) return
 
     const response = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&limit=${nextLimit}`)
@@ -119,11 +122,15 @@ async function fetchMoreSongs(query) {
     })
 
     fetchError.value = false
-    if (newSongs.length === 0) return  // if no new songs to fetch
+
+    if (newSongs.length === 0) {
+      noMoreNewSongsToFetch.value = true
+      return  // if no new songs to fetch
+    }
 
     songs.value = [...songs.value, ...newSongs]
+    noMoreNewSongsToFetch.value = false
     // console.log(newSongs)
-
 
   } catch (error) {
       console.warn('Error fetching more songs:', error)
