@@ -70,7 +70,7 @@ function playPrevious() {
 }
 
 
-const currentSearchTerm = ref('top hits')
+const currentSearchTerm = ref('tophits')
 const songListRef = ref(null)
 const fetchError = ref(false)
 const noMoreNewSongsToFetch = ref(false)
@@ -202,7 +202,7 @@ function toggleLikeSong(song) {
 
 
 onMounted(()=>{
-    fetchSongs('top hits')
+    fetchSongs('tophits')
 
     const stored = localStorage.getItem('likedSongs')
     likedSongs.value = stored ? JSON.parse(stored) : []
