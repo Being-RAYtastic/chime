@@ -2,8 +2,8 @@
 import { ref, watch, computed } from 'vue'
 import { Play, Pause, SkipBack, SkipForward, Heart } from 'lucide-vue-next'
 
-const props = defineProps(['song', 'isPlaying'])
-const emit = defineEmits(['togglePlay', 'next', 'prev', 'ended'])
+const props = defineProps(['song', 'isPlaying', 'isLiked'])
+const emit = defineEmits(['togglePlay', 'next', 'prev', 'ended', 'like'])
 
 const audioPlayer = ref(null)
 
@@ -55,9 +55,9 @@ const progressPercent = computed(() => {
                     <img :src="song.cover" class="w-12 h-12 rounded-md object-cover shrink-0 block" />
                     <p class="text-sm text-white truncate">{{ song.title }}</p>
                 </div>
-                <div class="sm:hidden flex justify-end mr-5 items-center text-white">
-                    <button>
-                        <Heart class="w-6 h-6 cursor-pointer"></Heart>
+                <div class="sm:hidden flex justify-end mr-5 items-center">
+                    <button @click="emit('like', song)" class="active:scale-90 transition-all duration-200">
+                        <Heart class="w-6 h-6 cursor-pointer transition-all duration-200" :class="isLiked? 'text-accent-secondary fill-accent-secondary': 'text-text'"></Heart>
                     </button>
                 </div>
             </section>
@@ -106,9 +106,9 @@ const progressPercent = computed(() => {
                 </button>
             </div>
         </div>
-        <div class="hidden sm:flex justify-end mr-5 items-center text-white">
-            <button v-if="song">
-                <Heart class="w-6 h-6 cursor-pointer"></Heart>
+        <div class="hidden sm:flex justify-end mr-5 items-center">
+            <button v-if="song" @click="emit('like', song)" class="active:scale-90 transition-all duration-200">
+                <Heart class="w-6 h-6 cursor-pointer transition-all duration-200" :class="isLiked? 'text-accent-secondary fill-accent-secondary': 'text-text'"></Heart>
             </button>
         </div>
     </div>

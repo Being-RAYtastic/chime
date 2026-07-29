@@ -1,20 +1,24 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import SongItem from './components/SongItem.vue';
 import Player from './components/Player.vue';
 import Searchbar from './components/Searchbar.vue';
+import Navbar from './components/Navbar.vue';
 
 // const songs = [
 //   { id: 1, title: 'Ecruteak City Theme', artist: 'Johto', src: '/songs/song1.mp3' },
 //   { id: 2, title: 'RSE Surf Theme', artist: 'Hoenn', src: '/songs/song2.mp3' },
 // ]
+const route = useRoute()
+const router = useRouter()
+
 
 const songs = ref([])
 const currentSong = ref(null)
-
-// const offset = ref('') // The offset parameter tells the API how many items to skip before it starts returning results
-
 const isPlaying = ref(false)
+const likedSongs = ref([])
 
 function togglePlay(song) {
   if (currentSong.value?.id === song.id) {
@@ -26,21 +30,39 @@ function togglePlay(song) {
 }
 
 function playNext() {
-  const currentIndex = songs.value.findIndex(song => song.id === currentSong.value.id)
+  let nextSong
+  
+  if (route.path === '/liked') {
+    const currentIndex = likedSongs.value.findIndex(song => song.id === currentSong.value.id)
+    nextSong = likedSongs.value[currentIndex + 1]
 
-  const nextSong = songs.value[currentIndex + 1]
+  } else {
+    const currentIndex = songs.value.findIndex(song => song.id === currentSong.value.id)
+
+    nextSong = songs.value[currentIndex + 1]
+  }
+
 
   if (nextSong) {
     togglePlay(nextSong)
-  } else {
+  } else if (route.path !== '/liked') {
     fetchMoreSongs(currentSearchTerm.value)
   }
 }
 
 function playPrevious() {
-  const currentIndex = songs.value.findIndex(song => song.id === currentSong.value.id)
+  let previousSong
+  
+  if (route.path === '/liked') {
+    const currentIndex = likedSongs.value.findIndex(song => song.id === currentSong.value.id)
+    previousSong = likedSongs.value[currentIndex - 1]
 
-  const previousSong = songs.value[currentIndex - 1]
+  } else {
+    const currentIndex = songs.value.findIndex(song => song.id === currentSong.value.id)
+
+    previousSong = songs.value[currentIndex - 1]
+  }
+
 
   if (previousSong) {
     togglePlay(previousSong)
@@ -54,7 +76,9 @@ const fetchError = ref(false)
 const noMoreNewSongsToFetch = ref(false)
 
 async function fetchSongs(query) {
+  router.push('/')
   currentSearchTerm.value = query
+
   
   try {
     const response = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&limit=20`, { cache: 'no-store' })
@@ -81,13 +105,6 @@ async function fetchSongs(query) {
     songs.value.length = 0
   }
 }
-
-
-onMounted(()=>{
-    fetchSongs('tophits')
-})
-
-
 
 
 const isLoadingMore = ref(false)
@@ -150,6 +167,58 @@ function handleScroll(event) {
   }
 }
 
+
+const isCurrentSongLiked = computed(()=>{
+  if (!currentSong.value) return false
+
+  return likedSongs.value.some(song => song?.id === currentSong.value.id)
+})
+
+function toggleLikeSong(song) {
+  if (!song) return
+
+  const index = likedSongs.value.findIndex(item=> item.id === song.id)
+  // console.log(index)
+
+  if (index !== -1) {
+    likedSongs.value.splice(index, 1)
+  } else {
+    const songToStore = {
+      id: song.id,
+      title: song.title,
+      artist: song.artist,
+      src: song.src,
+      cover: song.cover,
+      duration: song.duration
+    }
+    
+    // console.log(songToStore)
+    likedSongs.value.push(songToStore)
+  }
+
+  localStorage.setItem('likedSongs', JSON.stringify(likedSongs.value))
+
+}
+
+
+onMounted(()=>{
+    fetchSongs('top hits')
+
+    const stored = localStorage.getItem('likedSongs')
+    likedSongs.value = stored ? JSON.parse(stored) : []
+    // console.log(likedSongs.value)
+})
+
+// Router related props
+const routerProps = computed(()=> ({
+  songs: songs.value,
+  currentSong: currentSong.value,
+  isPlaying: isPlaying.value,
+  likedSongs: likedSongs.value,
+  // isLiked: isCurrentSongLiked.value 
+}))
+
+
 </script>
 
 <template>
@@ -157,8 +226,10 @@ function handleScroll(event) {
     <!-- <div class="p-5"> -->
       <Searchbar @search="fetchSongs" />
     <!-- </div> -->
-    <div class="bg-surface rounded-2xl overflow-hidden flex">
 
+    
+    <div class="bg-surface rounded-2xl overflow-hidden flex flex-col">
+      <Navbar />
       <!-- BUG to fix later: Infinite scroll fails to trigger when initial content height is smaller than the container, because scroll bar doesn't appear (TO TRIGGER IT: try fetching 2 songs only)-->
       <div @scroll="handleScroll" ref="songListRef" class="p-3 flex flex-col overflow-y-auto flex-1 min-h-0 scroll-smooth
             [&::-webkit-scrollbar]:w-1.5
@@ -166,14 +237,19 @@ function handleScroll(event) {
             [&::-webkit-scrollbar-thumb]:bg-divider
             [&::-webkit-scrollbar-thumb]:rounded-full">
 
-          <SongItem v-for="song in songs" :key="song.id" :song="song" v
-            :isPlaying="isPlaying && currentSong?.id === song.id" @play="togglePlay"></SongItem>
+
+          <router-view v-bind="routerProps" @play="togglePlay" @like="toggleLikeSong"/>
+          <!-- <SongItem v-for="song in songs" :key="song.id" :song="song"
+            :isPlaying="isPlaying && currentSong?.id === song.id" @play="togglePlay"></SongItem> -->
 
           <div v-if="fetchError" class="text-center text-muted text-sm py-6">
-            Couldn't load songs. Try searching for something else.
+            Couldn't load songs. Try searching for something else maybe.
           </div>
           <div v-else-if="songs.length===0 || isLoadingMore" class="text-center text-muted text-sm py-6">
             Loading...
+          </div>
+          <div v-else-if="route.path === '/liked' && likedSongs.length === 0" class="text-center text-muted text-sm py-6">
+            No Liked Songs
           </div>
           
 
@@ -181,7 +257,7 @@ function handleScroll(event) {
     </div>
 
     <div class="bg-player rounded-2xl mt-auto">
-      <Player :song="currentSong" :is-playing="isPlaying" @toggle-play="togglePlay(currentSong)" @next="playNext" @prev="playPrevious" @ended="isPlaying = false" />
+      <Player :song="currentSong" :isPlaying="isPlaying" @toggle-play="togglePlay(currentSong)" @next="playNext" @prev="playPrevious" @ended="isPlaying=false; playNext()"  @like="toggleLikeSong" :is-liked="isCurrentSongLiked" />
     </div>
   </div>
 

@@ -19,7 +19,7 @@ function handleSearch() {
         </div>
         <div class="flex-1">
             <input type="text" v-model="searchTerm" @keyup.enter="handleSearch" placeholder="Search"
-                class="w-full bg-surface text-white rounded-2xl px-4 py-2 outline-none focus:ring-2 focus:ring-accent" />
+                class="w-full bg-surface text-text rounded-2xl px-4 py-2 outline-none focus:ring-2 focus:ring-accent" />
         </div>
         <div>
             <button @click="handleSearch" class="bg-accent text-background rounded-2xl px-4 py-2 font-medium cursor-pointer
